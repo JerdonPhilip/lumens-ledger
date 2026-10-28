@@ -1,0 +1,18 @@
+{
+  "name": "Lumens Ledger",
+  "short_name": "Lumens Ledger",
+  "description": "Offline-ready daily sales and VAT tracker.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f1f5f9",
+  "theme_color": "#0f172a",
+  "icons": [
+    {
+      "src": "./assets/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

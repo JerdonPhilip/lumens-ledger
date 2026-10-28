@@ -1,0 +1,1882 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Lumens Ledger · VAT / SC/PWD</title>
+    <meta name="theme-color" content="#0f172a">
+    <meta name="description" content="Offline-ready daily sales and VAT tracker.">
+    <link rel="icon" href="./assets/icon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="./vendor/fontawesome.css">
+    <link rel="stylesheet" href="./assets/app.css">
+    <style>
+        html {
+            scroll-behavior: smooth;
+            scroll-padding-top: 1rem;
+            scrollbar-gutter: stable;
+            overscroll-behavior-y: contain;
+        }
+
+        #dashboardMain {
+            min-width: 0;
+            scroll-margin-top: 1rem;
+        }
+
+        body.modal-open {
+            overflow: hidden;
+        }
+
+        #saleModal,
+        #expenseModal,
+        #menuModal,
+        #calendarModal,
+        #confirmModal,
+        #noticeModal,
+        #printReportModal,
+        #backupModal {
+            overscroll-behavior: contain;
+            touch-action: pan-y;
+        }
+
+        #saleModalPanel,
+        #expenseModalPanel,
+        #menuModalPanel,
+        #calendarPanel,
+        #confirmPanel,
+        #noticePanel,
+        #printReportPanel,
+        #backupPanel {
+            max-height: min(90vh, 90dvh);
+            overflow-x: hidden;
+            overflow-y: auto;
+            overscroll-behavior: contain;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: thin;
+            scrollbar-color: #94a3b8 #f1f5f9;
+        }
+
+        #expenseModalPanel {
+            overflow: hidden;
+        }
+
+        #saleForm {
+            overscroll-behavior: contain;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: thin;
+            scrollbar-color: #94a3b8 #f1f5f9;
+        }
+
+        .expense-primary-button {
+            background: #047857;
+            color: #fff;
+        }
+
+        .expense-primary-button:hover {
+            background: #065f46;
+        }
+
+        .expense-primary-button:focus-visible,
+        .expense-field:focus-visible {
+            outline: 3px solid rgb(16 185 129 / 35%);
+            outline-offset: 2px;
+        }
+
+        .expense-field:focus {
+            border-color: #059669;
+            background: #fff;
+            box-shadow: 0 0 0 2px rgb(16 185 129 / 18%);
+            outline: none;
+        }
+
+        .expense-amount-currency {
+            position: absolute;
+            inset: 0 auto 0 0;
+            display: flex;
+            align-items: center;
+            padding-left: 0.875rem;
+            color: #64748b;
+            font-weight: 600;
+            pointer-events: none;
+        }
+
+        #expenseAmount {
+            padding-left: 2.75rem;
+            appearance: textfield;
+            -moz-appearance: textfield;
+        }
+
+        #expenseAmount::-webkit-inner-spin-button,
+        #expenseAmount::-webkit-outer-spin-button {
+            margin: 0;
+            -webkit-appearance: none;
+        }
+
+        .expense-modal-panel {
+            display: flex;
+            flex-direction: column;
+            max-height: calc(100vh - 2rem);
+            max-height: calc(100dvh - 2rem);
+            overflow: hidden;
+        }
+
+        #expenseModalPanel > .expense-modal-header {
+            flex: 0 0 auto;
+        }
+
+        #expenseForm {
+            display: flex;
+            flex: 1 1 auto;
+            flex-direction: column;
+            min-height: 0;
+        }
+
+        .expense-form-fields {
+            flex: 1 1 auto;
+            min-height: 0;
+            overflow-y: auto;
+            overscroll-behavior: contain;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-gutter: stable;
+            scrollbar-width: thin;
+            scrollbar-color: #94a3b8 #f1f5f9;
+            padding: 0.25rem;
+        }
+
+        .expense-form-actions {
+            flex: 0 0 auto;
+            padding: 0.75rem 0 0.25rem;
+            border-top: 1px solid #e2e8f0;
+            background: #fff;
+        }
+
+        .expense-card-amount {
+            flex-shrink: 0;
+            color: #b91c1c;
+            font-weight: 800;
+        }
+
+        .expense-notes {
+            white-space: pre-wrap;
+            overflow-wrap: anywhere;
+        }
+
+        .eula-modal {
+            position: fixed;
+            inset: 0;
+            z-index: 200;
+            isolation: isolate;
+            padding: max(0.75rem, env(safe-area-inset-top)) 0.75rem max(0.75rem, env(safe-area-inset-bottom));
+        }
+
+        .eula-panel {
+            position: relative;
+            z-index: 1;
+            width: min(100%, 48rem);
+            max-height: min(90vh, 58rem);
+            max-height: min(90dvh, 58rem);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            border: 1px solid #e2e8f0;
+            border-radius: 1.25rem;
+            background: #fff;
+            box-shadow: 0 24px 64px rgb(15 23 42 / 28%);
+        }
+
+        .eula-logo-badge {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 3.25rem;
+            height: 3.25rem;
+            padding: 0.35rem;
+            box-sizing: border-box;
+            border-radius: 1rem;
+            background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+            box-shadow: inset 0 0 0 1px rgb(59 130 246 / 18%);
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+
+        .eula-logo-image {
+            display: block;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            filter: drop-shadow(0 2px 2px rgb(30 64 175 / 20%));
+        }
+
+        #accept-eula-btn {
+            min-height: 3rem;
+            padding-block: 0.75rem;
+            line-height: 1.25rem;
+        }
+
+        .eula-header,
+        .eula-footer {
+            flex: 0 0 auto;
+            background: #f8fafc;
+        }
+
+        .eula-header {
+            padding: 1.25rem 1.5rem;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .eula-scroll-box {
+            flex: 1 1 auto;
+            min-height: 0;
+            overflow-y: auto;
+            overscroll-behavior: contain;
+            -webkit-overflow-scrolling: touch;
+            padding: 1.5rem;
+            color: #334155;
+            font-size: 0.875rem;
+            line-height: 1.7;
+            scrollbar-width: thin;
+            scrollbar-color: #94a3b8 #f1f5f9;
+        }
+
+        .eula-scroll-box:focus-visible {
+            outline: 3px solid rgb(59 130 246 / 45%);
+            outline-offset: -3px;
+        }
+
+        .eula-section + .eula-section {
+            margin-top: 1.5rem;
+            padding-top: 1.25rem;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        .eula-section h3 {
+            margin-bottom: 0.45rem;
+            color: #1e3a8a;
+            font-size: 0.9rem;
+            font-weight: 800;
+            line-height: 1.4;
+        }
+
+        .eula-section p + p {
+            margin-top: 0.65rem;
+        }
+
+        .eula-section ul {
+            margin: 0.65rem 0 0;
+            padding-left: 1.25rem;
+            list-style: disc;
+        }
+
+        .eula-section li + li {
+            margin-top: 0.35rem;
+        }
+
+        .eula-notice {
+            margin-top: 1rem;
+            padding: 0.85rem 1rem;
+            border: 1px solid #bfdbfe;
+            border-radius: 0.875rem;
+            background: #eff6ff;
+            color: #1e3a8a;
+            font-size: 0.8rem;
+            line-height: 1.55;
+        }
+
+        .eula-footer {
+            padding: 1rem 1.5rem max(1rem, env(safe-area-inset-bottom));
+            border-top: 1px solid #e2e8f0;
+        }
+
+        .eula-actions {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        #accept-eula-btn.eula-accept-enabled {
+            background: #2563eb;
+            color: #fff;
+            cursor: pointer;
+        }
+
+        #accept-eula-btn.eula-accept-enabled:hover {
+            background: #1d4ed8;
+        }
+
+        #accept-eula-btn:focus-visible,
+        .eula-footer a:focus-visible {
+            outline: 3px solid rgb(59 130 246 / 45%);
+            outline-offset: 2px;
+        }
+
+        @media (max-width: 640px) {
+            html {
+                scroll-padding-top: 5rem;
+            }
+
+            .eula-panel {
+                max-height: 94vh;
+                max-height: 94dvh;
+                border-radius: 1rem;
+            }
+
+            .eula-header {
+                padding: 1rem;
+            }
+
+            .eula-scroll-box {
+                padding: 1rem;
+            }
+
+            .eula-footer {
+                padding: 0.85rem 1rem max(0.85rem, env(safe-area-inset-bottom));
+            }
+
+            .eula-actions {
+                grid-template-columns: minmax(0, 1fr);
+            }
+
+            #accept-eula-btn {
+                min-height: 3.25rem;
+                padding-block: 0.875rem;
+            }
+
+            #saleModalPanel,
+            #expenseModalPanel,
+            #menuModalPanel,
+            #calendarPanel,
+            #confirmPanel,
+            #noticePanel,
+            #printReportPanel,
+            #backupPanel {
+                max-height: min(92vh, 92dvh);
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            html {
+                scroll-behavior: auto;
+            }
+        }
+
+        .desktop-sidebar {
+            width: var(--sidebar-width, 16rem);
+            height: 100vh;
+            height: 100dvh;
+            overflow: hidden;
+            gap: 0;
+        }
+
+        .desktop-sidebar > :first-child,
+        .desktop-date-navigator {
+            flex: 0 0 auto;
+        }
+
+        .desktop-sidebar-actions {
+            flex: 1 1 auto;
+            min-height: 0;
+            overflow-y: auto;
+            overscroll-behavior: contain;
+            scrollbar-width: thin;
+            scrollbar-color: #475569 transparent;
+            padding-right: 0.25rem;
+        }
+
+        .desktop-sidebar-actions::-webkit-scrollbar {
+            width: 0.25rem;
+        }
+
+        .desktop-sidebar-actions::-webkit-scrollbar-thumb {
+            border-radius: 999px;
+            background: #475569;
+        }
+
+        .desktop-quick-actions button {
+            min-width: 0;
+            min-height: 2.75rem;
+            justify-content: flex-start;
+            gap: 0.625rem;
+            padding: 0.5rem 0.75rem;
+            white-space: nowrap;
+            overflow: hidden;
+            font-size: 0.8125rem;
+        }
+
+        .desktop-sidebar-group {
+            margin-top: 0.5rem;
+            border: 1px solid #263449;
+            border-radius: 0.75rem;
+            background: rgb(30 41 59 / 45%);
+        }
+
+        .desktop-sidebar-group summary {
+            display: flex;
+            min-height: 2.75rem;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.75rem;
+            padding: 0.625rem 0.75rem;
+            color: #cbd5e1;
+            cursor: pointer;
+            list-style: none;
+            font-size: 0.8125rem;
+            font-weight: 700;
+        }
+
+        .desktop-sidebar-group summary::-webkit-details-marker {
+            display: none;
+        }
+
+        .desktop-sidebar-group summary:focus-visible {
+            outline: 2px solid #60a5fa;
+            outline-offset: -2px;
+            border-radius: 0.75rem;
+        }
+
+        .desktop-sidebar-group summary:hover {
+            color: #fff;
+        }
+
+        .desktop-sidebar-group summary > span:first-child {
+            display: flex;
+            align-items: center;
+            gap: 0.625rem;
+        }
+
+        .desktop-sidebar-group summary > span:first-child > i {
+            width: 1rem;
+            text-align: center;
+        }
+
+        .desktop-sidebar-group summary > span:last-child {
+            color: #64748b;
+            transition: transform 160ms ease;
+        }
+
+        .desktop-sidebar-group[open] summary > span:last-child {
+            transform: rotate(90deg);
+        }
+
+        .desktop-sidebar-group-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 0.375rem;
+            padding: 0 0.5rem 0.5rem;
+        }
+
+        .desktop-sidebar-group-actions button {
+            min-height: 2.5rem;
+            justify-content: flex-start;
+            gap: 0.625rem;
+            padding: 0.5rem 0.625rem;
+            font-size: 0.8125rem;
+        }
+
+        .desktop-quick-actions button > i {
+            flex: 0 0 1rem;
+            text-align: center;
+        }
+
+        .desktop-sidebar-group-actions button > i {
+            flex: 0 0 1rem;
+            text-align: center;
+        }
+
+        .desktop-action-label {
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .desktop-date-navigator {
+            flex: 0 0 auto;
+            background: #0f172a;
+        }
+
+        .dashboard-shell {
+            margin-left: var(--sidebar-width, 16rem);
+        }
+
+        .ledger-search:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgb(59 130 246 / 15%);
+            outline: none;
+        }
+
+        .ledger-search {
+            display: block;
+            box-sizing: border-box;
+            width: 100%;
+            height: 2.75rem;
+            padding: 0.625rem 0.875rem 0.625rem 2.75rem;
+            border: 1px solid #e2e8f0;
+            border-radius: 0.75rem;
+            background: #fff;
+            box-shadow: 0 1px 2px rgb(15 23 42 / 6%);
+            color: #334155;
+            font: inherit;
+            font-size: 0.875rem;
+            line-height: 1.25rem;
+            appearance: none;
+            transition: border-color 150ms ease, box-shadow 150ms ease;
+        }
+
+        .ledger-search::placeholder {
+            color: #94a3b8;
+            opacity: 1;
+        }
+
+        .ledger-search::-webkit-search-cancel-button {
+            cursor: pointer;
+        }
+
+        .ledger-search-icon {
+            position: absolute;
+            top: 50%;
+            left: 0.875rem;
+            display: block;
+            line-height: 1;
+            pointer-events: none;
+            transform: translateY(-50%);
+        }
+
+        .ledger-entry-card {
+            min-width: 0;
+        }
+
+        .ledger-entry-card h3 {
+            overflow-wrap: anywhere;
+        }
+
+        .ledger-filters {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr);
+            gap: 0.5rem;
+        }
+
+        .sales-list-grid {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr);
+            gap: 0.75rem;
+        }
+
+        @media (min-width: 640px) {
+            .ledger-filters {
+                grid-template-columns: minmax(0, 1fr) auto;
+            }
+        }
+
+        @media (min-width: 768px) {
+            .sales-list-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 1rem;
+            }
+        }
+
+        @media (min-width: 1536px) {
+            .sales-list-grid {
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+            }
+        }
+
+        .sale-modal-panel {
+            max-width: 64rem;
+            max-height: calc(100vh - 2rem);
+            max-height: calc(100dvh - 2rem);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        #saleModalPanel > .sale-modal-header {
+            flex: 0 0 auto;
+        }
+
+        #saleForm {
+            flex: 1 1 auto;
+            min-height: 0;
+            overflow-y: auto;
+            overscroll-behavior: contain;
+            padding: 0.25rem;
+            scrollbar-gutter: stable;
+        }
+
+        .sale-form-actions {
+            position: sticky;
+            bottom: 0;
+            z-index: 1;
+            padding: 0.75rem 0 0.25rem;
+            background: #fff;
+        }
+
+        .sale-cancel-button {
+            border-color: #c2410c;
+            color: #9a3412;
+        }
+
+        .sale-cancel-button:hover {
+            background-color: #fff7ed;
+        }
+
+        .sale-form-grid {
+            display: grid;
+            grid-template-columns: minmax(0, 1.5fr) minmax(18rem, 1fr);
+            column-gap: 1.5rem;
+            row-gap: 1rem;
+        }
+
+        .sale-form-left {
+            grid-column: 1;
+        }
+
+        .sale-form-summary {
+            grid-column: 2;
+            grid-row: 1 / span 5;
+            align-self: start;
+            display: flex;
+            flex-direction: column;
+            gap: 0.625rem;
+            padding: 1rem;
+        }
+
+        .sale-form-summary > :not([hidden]) ~ :not([hidden]) {
+            margin-top: 0;
+        }
+
+        .sale-form-actions {
+            grid-column: 1 / -1;
+        }
+
+        .dashboard-financial-summary {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 0.75rem 1rem;
+        }
+
+        .dashboard-financial-summary > div {
+            min-width: 0;
+        }
+
+        .sale-preview-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.75rem;
+            min-height: 1.75rem;
+            font-family: "Plus Jakarta Sans", sans-serif;
+            font-size: 1rem;
+            line-height: 1.35;
+        }
+
+        .sale-preview-row > span:first-child {
+            min-width: 0;
+            line-height: 1.3;
+        }
+
+        .sale-preview-row > span:last-child {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            flex-shrink: 0;
+            white-space: nowrap;
+            font-family: ui-sans-serif, system-ui, sans-serif;
+            font-size: 1.2rem;
+            line-height: 1.2;
+            font-variant-numeric: tabular-nums;
+            font-weight: 800;
+        }
+
+        .preview-currency-symbol {
+            display: inline-block;
+            width: auto;
+            height: auto;
+            border-radius: 0;
+            background: transparent;
+            color: #bfdbfe;
+            font-size: 1.15em;
+            font-family: ui-sans-serif, system-ui, sans-serif;
+            font-weight: 400;
+            line-height: inherit;
+            vertical-align: baseline;
+            flex-shrink: 0;
+        }
+
+        .currency-value {
+            display: inline-flex;
+            align-items: baseline;
+            gap: 0.18em;
+            white-space: nowrap;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .currency-value-sign {
+            font-family: ui-sans-serif, system-ui, sans-serif;
+            font-size: 1.1em;
+            font-weight: 400;
+            line-height: 1;
+        }
+
+        .sale-preview-final {
+            gap: 0.75rem;
+            margin-top: 0.25rem;
+            padding-top: 0.75rem;
+            font-size: 0.95rem;
+        }
+
+        .sale-preview-final > span:last-child {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            white-space: nowrap;
+            font-size: 1.65rem;
+            line-height: 1.15;
+            font-variant-numeric: tabular-nums;
+            font-weight: 900;
+        }
+
+        .sale-preview-final > span:first-child {
+            line-height: 1.3;
+        }
+
+        .sale-preview-final .preview-currency-symbol {
+            color: #93c5fd;
+            font-size: 1.15em;
+        }
+
+        @media (max-width: 1023px) {
+            .dashboard-shell {
+                margin-left: 0;
+            }
+
+            .sale-form-grid {
+                grid-template-columns: minmax(0, 1fr);
+            }
+
+            .sale-form-left,
+            .sale-form-summary,
+            .sale-form-actions {
+                grid-column: 1;
+            }
+
+            .sale-form-summary {
+                grid-row: auto;
+            }
+        }
+
+        @media (min-width: 1024px) {
+            :root {
+                --sidebar-width: clamp(14rem, 19vw, 16rem);
+            }
+        }
+
+        @media (max-height: 760px) and (min-width: 1024px) {
+            .desktop-sidebar {
+                padding: 0.875rem;
+            }
+
+            .desktop-sidebar-actions {
+                margin-top: 0.75rem;
+                padding-top: 0.75rem;
+            }
+
+            .desktop-sidebar-actions > .desktop-sidebar-section {
+                padding-top: 0.75rem;
+            }
+
+            .desktop-sidebar-actions .desktop-quick-actions {
+                gap: 0.4rem;
+            }
+
+            .desktop-sidebar-actions .desktop-quick-actions button {
+                min-height: 2.25rem;
+                padding-top: 0.4rem;
+                padding-bottom: 0.4rem;
+                font-size: 0.75rem;
+            }
+
+            .desktop-sidebar-group {
+                margin-top: 0.375rem;
+            }
+
+            .desktop-sidebar-group summary {
+                min-height: 2.5rem;
+                padding-top: 0.5rem;
+                padding-bottom: 0.5rem;
+            }
+
+            .desktop-sidebar-group-actions {
+                gap: 0.25rem;
+                padding-bottom: 0.375rem;
+            }
+
+            .desktop-sidebar-group-actions button {
+                min-height: 2.25rem;
+                padding-top: 0.4rem;
+                padding-bottom: 0.4rem;
+                font-size: 0.75rem;
+            }
+
+            .desktop-date-navigator {
+                padding-top: 0.75rem;
+            }
+        }
+
+        @media (max-height: 760px) {
+            .sale-modal-panel {
+                max-height: calc(100vh - 1rem);
+                max-height: calc(100dvh - 1rem);
+            }
+
+            .sale-modal-header {
+                padding-bottom: 0.5rem;
+            }
+
+            #saleModalPanel {
+                row-gap: 0.75rem;
+                padding: 0.75rem 1rem;
+            }
+
+            .sale-form-grid {
+                row-gap: 0.65rem;
+            }
+
+            #btnCalcSc,
+            #btnCalcVat,
+            #btnPayCash,
+            #btnPayGcash,
+            #btnPayCard,
+            #btnPayCredit {
+                height: 2.5rem;
+            }
+
+            .sale-form-actions button {
+                min-height: 2.75rem;
+                height: auto;
+            }
+
+            .sale-form-summary {
+                gap: 0.5rem;
+                padding: 0.85rem;
+            }
+
+            .sale-form-summary > :not([hidden]) ~ :not([hidden]) {
+                margin-top: 0;
+            }
+
+            .sale-preview-row {
+                font-size: 0.875rem;
+            }
+
+            .sale-preview-row > span:last-child {
+                font-size: 1.15rem;
+            }
+
+            .sale-preview-final > span:last-child {
+                font-size: 1.45rem;
+            }
+        }
+
+        @media (max-width: 420px) {
+            .sale-form-actions {
+                display: grid;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 0.5rem;
+            }
+
+            .sale-dismiss-button {
+                grid-area: 1 / 1;
+            }
+
+            #saleCancellationButton {
+                grid-area: 2 / 1 / 3 / 3;
+            }
+
+            .sale-form-actions button[type="submit"] {
+                grid-area: 1 / 2;
+            }
+
+            .sale-form-actions button {
+                min-width: 0;
+                padding-left: 0.35rem;
+                padding-right: 0.35rem;
+                font-size: 0.75rem;
+                line-height: 1.2;
+            }
+        }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-800 min-h-screen selection:bg-blue-200">
+
+    <!-- ========== DESKTOP SIDEBAR (visible only on lg screens) ========== -->
+    <aside class="desktop-sidebar hidden lg:flex fixed top-0 left-0 bg-slate-900 text-white flex-col p-5 shadow-2xl z-40 no-print">
+        <div class="flex items-center space-x-2.5">
+            <div class="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center shadow-lg">
+                <img src="./assets/icon.svg" alt="" aria-hidden="true" class="w-8 h-8">
+            </div>
+            <div>
+                <h1 class="text-lg font-extrabold tracking-tight leading-tight">Lumens Ledger</h1>
+                <p class="text-[11px] text-slate-400 font-medium">Sales workspace</p>
+            </div>
+        </div>
+
+        <div class="desktop-sidebar-actions border-t border-slate-800 pt-4 mt-4">
+            <section class="desktop-sidebar-section">
+                <p class="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-2">Quick actions</p>
+                <div class="desktop-quick-actions flex flex-col gap-2">
+                <button onclick="openAddModal()" title="Add sale (F2)" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm transition touch-active shadow-md shadow-blue-900/50">
+                    <i class="fa-solid fa-plus text-base"></i><span class="desktop-action-label">New Sale</span>
+                </button>
+                <button onclick="openAddExpenseModal()" title="Add Expense" class="expense-primary-button w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition touch-active shadow-md">
+                    <i class="fa-solid fa-receipt text-base"></i><span class="desktop-action-label">Add Expense</span>
+                </button>
+                </div>
+            </section>
+
+            <details class="desktop-sidebar-group">
+                <summary>
+                    <span><i class="fa-solid fa-chart-column text-emerald-400" aria-hidden="true"></i>Reports &amp; printing</span>
+                    <span><i class="fa-solid fa-chevron-right text-[10px]" aria-hidden="true"></i></span>
+                </summary>
+                <div class="desktop-sidebar-group-actions">
+                <button onclick="exportSummaryCSV()" title="Export Day Sales CSV" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-sm transition touch-active">
+                    <i class="fa-solid fa-file-csv text-emerald-400"></i><span class="desktop-action-label">Export CSV</span>
+                </button>
+                <button onclick="openPrintReportModal()" title="Export printable daily report" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-sm transition touch-active">
+                    <i class="fa-solid fa-file-invoice text-amber-400"></i><span class="desktop-action-label">Print Report CSV</span>
+                </button>
+                <button onclick="printLedger()" title="Print or Save PDF" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-sm transition touch-active">
+                    <i class="fa-solid fa-print text-blue-400"></i><span class="desktop-action-label">Print / PDF</span>
+                </button>
+                </div>
+            </details>
+
+            <details class="desktop-sidebar-group">
+                <summary>
+                    <span><i class="fa-solid fa-database text-blue-400" aria-hidden="true"></i>Data &amp; backups</span>
+                    <span><i class="fa-solid fa-chevron-right text-[10px]" aria-hidden="true"></i></span>
+                </summary>
+                <div class="desktop-sidebar-group-actions">
+                <button onclick="exportSqliteDatabase()" title="Export Day SQLite Database" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-sm transition touch-active">
+                    <i class="fa-solid fa-database text-blue-400"></i><span class="desktop-action-label">Export SQLite</span>
+                </button>
+                <button onclick="document.getElementById('sqliteFileInput').click()" title="Import Day SQLite Database" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-sm transition touch-active">
+                    <i class="fa-solid fa-file-arrow-up text-amber-400"></i><span class="desktop-action-label">Import SQLite</span>
+                </button>
+                <button onclick="showBackupHistory()" title="Automatic Daily Backups" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-sm transition touch-active">
+                    <i class="fa-solid fa-clock-rotate-left text-emerald-400"></i><span class="desktop-action-label">Daily Backups</span>
+                </button>
+                <button onclick="chooseDataFolder()" title="Choose Daily Database Folder" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-sm transition touch-active">
+                    <i class="fa-solid fa-folder-open text-amber-400"></i><span class="desktop-action-label">Choose Data Folder</span>
+                </button>
+                </div>
+            </details>
+
+            <details class="desktop-sidebar-group">
+                <summary>
+                    <span><i class="fa-solid fa-screwdriver-wrench text-slate-300" aria-hidden="true"></i>More tools</span>
+                    <span><i class="fa-solid fa-chevron-right text-[10px]" aria-hidden="true"></i></span>
+                </summary>
+                <div class="desktop-sidebar-group-actions">
+                <button onclick="toggleMenuModal()" title="Settings & Actions" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-sm transition touch-active">
+                    <i class="fa-solid fa-sliders text-slate-300"></i><span class="desktop-action-label">Settings & Actions</span>
+                </button>
+                </div>
+            </details>
+            </div>
+
+        <div class="desktop-date-navigator border-t border-slate-800 pt-4">
+            <p class="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-2">Selected day</p>
+            <button type="button" id="desktopDateButton" onclick="openCalendar()" aria-label="Choose ledger date" class="w-full flex items-center gap-3 bg-slate-800 text-slate-100 text-sm px-3 py-3 rounded-xl border border-slate-700 text-left focus:outline-none focus:ring-2 focus:ring-blue-500 transition hover:bg-slate-700">
+                <i class="fa-regular fa-calendar-days text-blue-300" aria-hidden="true"></i>
+                <span id="desktopDateButtonText" class="font-bold">—</span>
+                <i class="fa-solid fa-chevron-right ml-auto text-[10px] text-slate-500" aria-hidden="true"></i>
+            </button>
+            <p id="desktopDateLabel" class="text-[11px] text-slate-400 mt-2 font-medium">—</p>
+        </div>
+    </aside>
+
+    <!-- Wrapper for main content to offset sidebar -->
+    <div class="dashboard-shell flex flex-col min-h-screen">
+        
+        <!-- Top Sticky Header (mobile only) -->
+        <header class="sticky top-0 z-30 bg-slate-900 text-white shadow-md lg:hidden no-print">
+            <div class="max-w-md mx-auto px-4 py-3.5 flex items-center justify-between">
+                <div class="flex items-center space-x-2.5">
+                    <div class="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-sm">
+                        <img src="./assets/icon.svg" alt="" aria-hidden="true" class="w-7 h-7">
+                    </div>
+                    <div>
+                        <h1 class="text-base font-bold leading-tight">Lumens Ledger</h1>
+                        <p class="text-[11px] text-slate-400 font-medium"><span id="headerDateDisplay">Today</span> · <span id="mobileAppStatus">Starting…</span></p>
+                    </div>
+                </div>
+                
+                <div class="flex items-center space-x-2 no-print">
+                    <button type="button" id="selectedDateButton" onclick="openCalendar()" class="bg-slate-800 text-slate-200 text-xs px-2.5 py-1.5 rounded-lg border border-slate-700 focus:outline-none focus:ring-1 focus:ring-blue-500"></button>
+                    <button onclick="toggleMenuModal()" class="w-9 h-9 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center touch-active">
+                        <i class="fa-solid fa-ellipsis-vertical"></i>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Container -->
+        <main id="dashboardMain" class="flex-1 w-full max-w-7xl mx-auto px-4 pt-4 pb-24 lg:pb-8 lg:pt-8 lg:px-8 space-y-4 lg:space-y-6">
+            <!-- ============================================================
+                 EULA / TERMS & CONDITIONS MODAL
+                 (inside main so the fixed aside sidebar stays behind it)
+                 ============================================================ -->
+            <div id="eula-modal" class="eula-modal fixed inset-0 z-[200] bg-slate-900/90 backdrop-blur-sm flex items-center justify-center hidden" role="dialog" aria-modal="true" aria-labelledby="eula-title" aria-describedby="eula-intro">
+                <div class="eula-panel">
+                    <header class="eula-header">
+                        <div class="flex items-start gap-3">
+                            <span class="eula-logo-badge" aria-hidden="true">
+                                <img src="./assets/icon.svg" alt="" class="eula-logo-image">
+                            </span>
+                            <div class="min-w-0">
+                                <p class="text-[10px] font-extrabold uppercase tracking-[0.16em] text-blue-700">Lumens Ledger · License</p>
+                                <h2 id="eula-title" class="text-lg sm:text-xl font-extrabold text-slate-900 leading-tight mt-0.5">Terms &amp; Conditions</h2>
+                                <p class="text-xs text-slate-500 mt-1">Version 1.1.1 · Effective October 27, 2026</p>
+                            </div>
+                        </div>
+                    </header>
+
+                    <div id="eula-scroll-box" class="eula-scroll-box" tabindex="0" role="region" aria-label="Terms and conditions. Scroll to review the complete agreement.">
+                        <p id="eula-intro" class="text-sm text-slate-700">Please review this agreement before using Lumens Ledger. You must reach the end to enable the acceptance button.</p>
+                        <div class="eula-notice">
+                            <strong>Important:</strong> Lumens Ledger is a local record-keeping aid, not accounting, legal, or tax advice. Check calculations and maintain your own secure backups.
+                        </div>
+
+                        <section class="eula-section">
+                            <h3>1. Agreement and acceptance</h3>
+                            <p>This agreement is between you (the "User") and Jerdon Philip Macaraeg (the "Creator") concerning your use of Lumens Ledger (the "Software"). By selecting <strong>I Agree &amp; Continue</strong>, you confirm that you have had an opportunity to review this agreement and agree to its terms. If you do not agree, do not use the Software.</p>
+                            <p>This agreement does not create a partnership, joint venture, agency, franchise, or employment relationship.</p>
+                        </section>
+
+                        <section class="eula-section">
+                            <h3>2. License</h3>
+                            <p>Subject to this agreement, the Creator grants you a limited, non-exclusive, non-transferable, non-sublicensable license to use the Software for personal purposes or your own internal business record-keeping. This license does not transfer ownership. It may end as described in Section 10.</p>
+                        </section>
+
+                        <section class="eula-section">
+                            <h3>3. Ownership and third-party components</h3>
+                            <p>The Creator retains rights in the parts of the Software that the Creator owns. Third-party components, including open-source software, remain subject to their own license terms. Applicable third-party notices and license information are provided with the Software.</p>
+                        </section>
+
+                        <section class="eula-section">
+                            <h3>4. Use restrictions</h3>
+                            <p>You may not, without the required permission:</p>
+                            <ul>
+                                <li>Modify, adapt, translate, or create derivative works of Creator-owned parts of the Software;</li>
+                                <li>Reverse engineer, decompile, or disassemble the Software except where applicable law does not allow that restriction;</li>
+                                <li>Sell, sublicense, rent, lease, or redistribute the Software as a product or hosted service;</li>
+                                <li>Remove or obscure notices included with the Software; or</li>
+                                <li>Use the Software unlawfully, infringe another person's rights, or introduce malicious code.</li>
+                            </ul>
+                            <p>Nothing in this agreement restricts rights granted by a third-party component's license or rights that cannot legally be restricted.</p>
+                        </section>
+
+                        <section class="eula-section">
+                            <h3>5. Data and backups</h3>
+                            <p>Sales records are stored locally in browser storage and SQLite on your device. If you choose a data folder or export a file, copies are saved to the location you select. The Software's application features do not send your sales records to the Creator. Browser, operating-system, hosting, or backup services that you use are governed by their own terms and privacy practices.</p>
+                            <p>You are responsible for protecting access to your device and selected folders and for making and checking backups. Browser storage can be cleared or lost. CSV and SQLite exports may contain sensitive information; store and share them carefully.</p>
+                        </section>
+
+                        <section class="eula-section">
+                            <h3>6. Tax, regulatory, and BIR notice</h3>
+                            <p>The Software is an administrative record-keeping aid, not accounting, legal, or tax advice. VAT, SC/PWD, surcharge, and total calculations depend on the information entered and options selected. You are responsible for checking calculations and ensuring your records, receipts, invoices, filings, and business practices comply with current requirements.</p>
+                            <p>The Creator does not represent that the Software is accredited or approved by the BIR, a local government unit, or another regulator. Confirm any applicable requirements with the relevant authority or a qualified professional.</p>
+                            <p>To the maximum extent permitted by applicable law, the Creator is not responsible for your compliance decisions or for assessments, penalties, interest, fines, rejected filings, audit outcomes, claims, or other consequences arising from your transactions, records, choices, or reliance on the Software. You remain responsible for determining which requirements apply to you and for obtaining professional advice where needed.</p>
+                        </section>
+
+                        <section class="eula-section">
+                            <h3>7. Disclaimer of warranties</h3>
+                            <p>To the maximum extent permitted by applicable law, the Software is provided "as is" and "as available," without express or implied warranties. The Creator does not warrant that it will be uninterrupted, error-free, secure, accurate, compatible with every device, or suitable for a particular purpose, or that defects will be corrected. Verify outputs before relying on them.</p>
+                        </section>
+
+                        <section class="eula-section">
+                            <h3>8. Limitation of liability</h3>
+                            <p>To the maximum extent permitted by applicable law, the Creator is not liable for indirect, incidental, special, exemplary, punitive, or consequential loss or damage, including loss of data, profits, business, or business opportunity, arising from use of or inability to use the Software.</p>
+                            <p>Where liability cannot legally be excluded, the Creator's total aggregate liability for claims relating to the Software will not exceed the amount you paid the Creator, if any, or PHP 1,000.00, whichever is lower. Nothing in this agreement excludes or limits liability, rights, or remedies that applicable law does not allow to be excluded or limited.</p>
+                        </section>
+
+                        <section class="eula-section">
+                            <h3>9. Indemnification</h3>
+                            <p>To the extent permitted by law, you are responsible for claims and losses caused by your unlawful use of the Software, breach of this agreement, or infringement of another person's rights. You are not required to indemnify the Creator for the Creator's own unlawful conduct.</p>
+                        </section>
+
+                        <section class="eula-section">
+                            <h3>10. Termination</h3>
+                            <p>This license ends if you materially breach this agreement and do not remedy the breach where remedy is reasonably possible. On termination, stop using the Software and remove copies you are not otherwise entitled to retain. Provisions concerning ownership, data responsibility, disclaimers, liability, indemnification, and governing law continue to apply where relevant.</p>
+                        </section>
+
+                        <section class="eula-section">
+                            <h3>11. Changes to this agreement</h3>
+                            <p>Revised terms will have a new version and effective date. If the Software requires acceptance of a revised version, review and accept it before continuing to use the Software. The acceptance record is stored in this browser and may be lost if browser storage is cleared.</p>
+                        </section>
+
+                        <section class="eula-section">
+                            <h3>12. Governing law and disputes</h3>
+                            <p>This agreement is governed by the laws of the Republic of the Philippines, subject to mandatory rights or protections that apply to you. Disputes are subject to the jurisdiction of courts that have authority under applicable law.</p>
+                        </section>
+
+                        <section class="eula-section">
+                            <h3>13. Severability, entire agreement, and contact</h3>
+                            <p>If a provision is found unenforceable, it will be limited or severed only as necessary, and the remaining provisions will continue to apply. This agreement is the entire agreement between you and the Creator about the Software license, except for separate terms that apply to third-party components.</p>
+                            <p>Questions, permissions, or licensing inquiries: <strong>Jerdon Philip Macaraeg</strong> · <a class="font-semibold text-blue-700 underline underline-offset-2" href="mailto:jerdonphilipmacaraeg@gmail.com">jerdonphilipmacaraeg@gmail.com</a></p>
+                            <p class="text-xs text-slate-500">This agreement is not legal or tax advice. A qualified Philippine lawyer should review it for your specific circumstances.</p>
+                        </section>
+                    </div>
+
+                    <footer class="eula-footer">
+                        <div id="eula-status" class="mb-3 min-h-5" role="status" aria-live="polite">
+                            <span id="eula-status-text" class="text-xs font-semibold text-slate-600 flex items-center gap-2">
+                                <i id="eula-status-icon" class="fa-solid fa-circle-info" aria-hidden="true"></i>
+                                <span id="eula-status-message">Please review the complete agreement to continue.</span>
+                            </span>
+                        </div>
+                        <div class="eula-actions">
+                            <button id="accept-eula-btn" type="button" disabled class="w-full min-h-12 px-4 rounded-xl bg-slate-200 text-slate-500 font-bold text-sm cursor-not-allowed flex items-center justify-center gap-2 transition-colors disabled:opacity-100">
+                                <span>I Agree &amp; Continue</span>
+                                <i class="fa-solid fa-check text-xs" aria-hidden="true"></i>
+                            </button>
+                            <div class="flex items-center justify-center gap-1">
+                                <a href="./LICENSE.md" download class="min-h-11 px-2 flex items-center justify-center rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    License
+                                </a>
+                                <a href="./TERMS_AND_CONDITIONS.md" download class="min-h-11 px-2 flex items-center justify-center rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    Terms
+                                </a>
+                            </div>
+                        </div>
+                        <p class="mt-2 text-center text-[11px] text-slate-500">If you do not agree, close this tab without continuing.</p>
+                    </footer>
+                </div>
+            </div>
+
+            <!-- Desktop Greeting / Top Bar -->
+            <div class="hidden lg:flex items-center justify-between no-print">
+                <div>
+                    <h2 class="text-2xl font-extrabold text-slate-800 tracking-tight">Dashboard Overview</h2>
+                    <p class="text-sm text-slate-500 font-medium" id="desktopDateDisplay">—</p>
+                </div>
+                <div class="flex items-center gap-4">
+                    <span class="text-xs font-bold bg-white px-4 py-2.5 rounded-xl border border-slate-200 shadow-sm text-slate-600" id="desktopEntriesBadge">0 sales</span>
+                    <div class="flex items-center gap-3">
+                    <span id="desktopAppStatus" class="text-xs font-semibold text-emerald-700 bg-emerald-50 px-3 py-2 rounded-xl border border-emerald-100">Starting…</span>
+                    <button onclick="openAddModal()" title="Add sale (F2)" class="h-11 px-5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-sm flex items-center gap-2 shadow-md shadow-blue-500/20 transition touch-active">
+                        <i class="fa-solid fa-plus"></i> Add Sale <span class="text-xs opacity-75">(F2)</span>
+                    </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Mobile Day Summary Header -->
+            <div class="flex items-center justify-between px-1 lg:hidden">
+                <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Day Summary</span>
+                <span class="text-xs font-semibold text-blue-600" id="totalEntriesBadge">0 Sales</span>
+            </div>
+
+            <!-- Dashboard Cards Grid (Mobile: stacked / Desktop: split) -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                
+                <!-- Left / Top: Grand Total Main Display Card -->
+                <div class="lg:col-span-2 bg-gradient-to-br from-blue-700 via-blue-800 to-slate-900 text-white p-5 sm:p-6 rounded-2xl shadow-lg relative overflow-hidden card-hover transition">
+                    <div class="absolute -right-4 -bottom-4 opacity-10 text-8xl pointer-events-none">
+                        <i class="fa-solid fa-sack-dollar"></i>
+                    </div>
+                    <p class="text-xs text-blue-200 font-medium uppercase tracking-wider">Total Sales Collected</p>
+                    <div class="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight my-1 lg:my-2" id="sumOverallDisplay"><span class="currency-value"><span class="currency-value-sign" aria-hidden="true">₱</span>0.00</span></div>
+                    
+                    <div class="dashboard-financial-summary pt-4 mt-4 border-t border-blue-600/50 text-xs">
+                        <div>
+                            <span class="text-blue-300 block text-[10px] uppercase font-bold tracking-wider">Net Sales</span>
+                            <span class="font-semibold text-white text-base" id="sumNetDisplay"><span class="currency-value"><span class="currency-value-sign" aria-hidden="true">₱</span>0.00</span></span>
+                        </div>
+                        <div id="dashboardVatSummary" class="hidden">
+                            <span class="text-blue-300 block text-[10px] uppercase font-bold tracking-wider">12% VAT</span>
+                            <span class="font-semibold text-white text-base" id="sumVatDisplay"><span class="currency-value"><span class="currency-value-sign" aria-hidden="true">₱</span>0.00</span></span>
+                        </div>
+                        <div>
+                            <span class="text-amber-300 block text-[10px] uppercase font-bold tracking-wider">SC/PWD Discounts</span>
+                            <span class="font-semibold text-amber-200 text-base" id="sumScDiscountDisplay"><span class="currency-value"><span class="currency-value-sign" aria-hidden="true">₱</span>0.00</span></span>
+                        </div>
+                        <div>
+                            <span class="text-rose-200 block text-[10px] uppercase font-bold tracking-wider">Expenses</span>
+                            <span class="font-semibold text-white text-base" id="sumExpensesDisplay"><span class="currency-value"><span class="currency-value-sign" aria-hidden="true">₱</span>0.00</span></span>
+                        </div>
+                        <div>
+                            <span class="text-emerald-200 block text-[10px] uppercase font-bold tracking-wider">Sales after expenses</span>
+                            <span class="font-semibold text-white text-base" id="sumAfterExpensesDisplay"><span class="currency-value"><span class="currency-value-sign" aria-hidden="true">₱</span>0.00</span></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right / Bottom: Payment Breakdown -->
+                <div class="lg:col-span-1">
+                    <!-- Desktop layout (vertical list) -->
+                    <div class="hidden lg:flex flex-col gap-3 h-full">
+                        <div class="flex-1 bg-white px-5 py-4 rounded-xl border border-slate-200/80 shadow-sm flex items-center justify-between card-hover transition">
+                            <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Cash</span>
+                            <span class="text-lg font-extrabold text-emerald-600" id="sumCashDesk"><span class="currency-value"><span class="currency-value-sign" aria-hidden="true">₱</span>0</span></span>
+                        </div>
+                        <div class="flex-1 bg-white px-5 py-4 rounded-xl border border-slate-200/80 shadow-sm flex items-center justify-between card-hover transition">
+                            <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">GCash</span>
+                            <span class="text-lg font-extrabold text-blue-600" id="sumGcashDesk"><span class="currency-value"><span class="currency-value-sign" aria-hidden="true">₱</span>0</span></span>
+                        </div>
+                        <div class="flex-1 bg-white px-5 py-4 rounded-xl border border-slate-200/80 shadow-sm flex items-center justify-between card-hover transition">
+                            <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Card</span>
+                            <span class="text-lg font-extrabold text-purple-600" id="sumCardDesk"><span class="currency-value"><span class="currency-value-sign" aria-hidden="true">₱</span>0</span></span>
+                        </div>
+                        <div class="flex-1 bg-white px-5 py-4 rounded-xl border border-slate-200/80 shadow-sm flex items-center justify-between card-hover transition">
+                            <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Credit</span>
+                            <span class="text-lg font-extrabold text-amber-600" id="sumCreditDesk"><span class="currency-value"><span class="currency-value-sign" aria-hidden="true">₱</span>0</span></span>
+                        </div>
+                    </div>
+
+                    <!-- Mobile layout (4-column pills) -->
+                    <div class="grid grid-cols-4 gap-2 lg:hidden">
+                        <div class="bg-white p-2.5 rounded-xl border border-slate-200/80 shadow-sm text-center">
+                            <span class="text-[10px] font-bold text-slate-400 uppercase block">Cash</span>
+                            <span class="text-xs font-extrabold text-emerald-700 block mt-0.5" id="sumCashMobile"><span class="currency-value"><span class="currency-value-sign" aria-hidden="true">₱</span>0</span></span>
+                        </div>
+                        <div class="bg-white p-2.5 rounded-xl border border-slate-200/80 shadow-sm text-center">
+                            <span class="text-[10px] font-bold text-slate-400 uppercase block">GCash</span>
+                            <span class="text-xs font-extrabold text-blue-600 block mt-0.5" id="sumGcashMobile"><span class="currency-value"><span class="currency-value-sign" aria-hidden="true">₱</span>0</span></span>
+                        </div>
+                        <div class="bg-white p-2.5 rounded-xl border border-slate-200/80 shadow-sm text-center">
+                            <span class="text-[10px] font-bold text-slate-400 uppercase block">Card</span>
+                            <span class="text-xs font-extrabold text-purple-600 block mt-0.5" id="sumCardMobile"><span class="currency-value"><span class="currency-value-sign" aria-hidden="true">₱</span>0</span></span>
+                        </div>
+                        <div class="bg-white p-2.5 rounded-xl border border-slate-200/80 shadow-sm text-center">
+                            <span class="text-[10px] font-bold text-slate-400 uppercase block">Credit</span>
+                            <span class="text-xs font-extrabold text-amber-600 block mt-0.5" id="sumCreditMobile"><span class="currency-value"><span class="currency-value-sign" aria-hidden="true">₱</span>0</span></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sales Entries List Section -->
+            <section class="space-y-4 pt-2">
+                <div class="flex items-center justify-between px-1">
+                    <div class="min-w-0">
+                        <h2 class="text-xs font-bold uppercase tracking-wider text-slate-500">Ledger Entries</h2>
+                        <p id="ledgerResultCount" class="text-[11px] text-slate-400 mt-1">0 entries</p>
+                    </div>
+                    <button onclick="openAddModal()" class="text-xs font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1 lg:hidden">
+                        <i class="fa-solid fa-circle-plus"></i> New Entry
+                    </button>
+                </div>
+
+                <div class="ledger-filters">
+                    <label class="relative block min-w-0">
+                        <span class="sr-only">Search sales</span>
+                        <i class="ledger-search-icon fa-solid fa-magnifying-glass text-slate-400 text-sm" aria-hidden="true"></i>
+                        <input type="search" id="ledgerSearch" aria-label="Search sales by description, invoice, or payment method" autocomplete="off" oninput="filterLedger()" placeholder="Search description, invoice, or payment…" class="ledger-search">
+                    </label>
+                    <label class="sr-only" for="ledgerStatusFilter">Filter sales status</label>
+                    <select id="ledgerStatusFilter" onchange="filterLedger()" class="h-11 px-3 rounded-xl border border-slate-200 bg-white text-sm font-semibold text-slate-600 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="all">All sales</option>
+                        <option value="active">Active sales</option>
+                        <option value="cancelled">Cancelled sales</option>
+                    </select>
+                </div>
+
+                <!-- Grid for Desktop, List for Mobile -->
+                <div id="salesListContainer" class="sales-list-grid">
+                    <!-- Sales Cards rendered dynamically -->
+                </div>
+                <div id="ledgerPagination" class="hidden flex-col items-center gap-2 pt-1">
+                    <p id="ledgerPaginationLabel" class="text-xs font-medium text-slate-500"></p>
+                    <button type="button" onclick="showMoreSales()" class="min-h-10 px-4 rounded-xl border border-slate-200 bg-white text-sm font-bold text-blue-700 shadow-sm hover:bg-blue-50 transition touch-active">
+                        Load more entries
+                    </button>
+                </div>
+            </section>
+
+            <section class="space-y-4 pt-2">
+                <div class="flex items-center justify-between px-1">
+                    <div class="min-w-0">
+                        <h2 class="text-xs font-bold uppercase tracking-wider text-slate-500">Daily Expenses</h2>
+                        <p id="expenseEntriesCount" class="text-[11px] text-slate-400 mt-1">0 expenses</p>
+                    </div>
+                    <button type="button" onclick="openAddExpenseModal()" class="text-xs font-bold text-emerald-700 hover:text-emerald-800 flex items-center gap-1">
+                        <i class="fa-solid fa-circle-plus" aria-hidden="true"></i> Add Expense
+                    </button>
+                </div>
+                <div id="expensesListContainer" class="sales-list-grid"></div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- Floating Bottom Action Bar for mobile (hidden on lg) -->
+    <div class="fixed bottom-0 inset-x-0 bg-white/90 backdrop-blur-md border-t border-slate-200 p-3 z-20 no-print shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] lg:hidden">
+        <div class="max-w-md mx-auto grid grid-cols-2 gap-2">
+            <button onclick="openAddModal()" class="h-12 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-md shadow-blue-500/20 flex items-center justify-center space-x-2 touch-active">
+                <i class="fa-solid fa-plus text-lg"></i>
+                <span class="text-sm">Add Sale</span>
+            </button>
+            <button onclick="openAddExpenseModal()" class="expense-primary-button h-12 font-bold rounded-xl shadow-md flex items-center justify-center space-x-2 touch-active">
+                <i class="fa-solid fa-receipt" aria-hidden="true"></i>
+                <span class="text-sm">Add Expense</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- ========== ADD/EDIT SALE MODAL ========== -->
+    <div id="saleModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm opacity-0 pointer-events-none transition-opacity duration-200 flex items-end sm:items-center justify-center p-0 sm:p-4">
+        <div id="saleModalPanel" class="sale-modal-panel bg-white w-full rounded-t-3xl sm:rounded-2xl max-h-[90vh] overflow-y-auto no-scrollbar shadow-2xl transform translate-y-full transition-transform duration-300 ease-out p-5 sm:p-6 space-y-5">
+            
+            <!-- Modal Header -->
+            <div class="sale-modal-header flex items-center justify-between border-b border-slate-100 pb-3">
+                <div class="flex items-center space-x-2">
+                    <span class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center font-bold">
+                        <i class="fa-solid fa-receipt"></i>
+                    </span>
+                    <h3 class="text-base font-bold text-slate-800" id="modalTitle">New Sale Entry</h3>
+                </div>
+                <button onclick="closeSaleModal()" class="w-8 h-8 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center touch-active hover:bg-slate-200">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <form id="saleForm" onsubmit="handleFormSubmit(event)" class="sale-form-grid">
+                <input type="hidden" id="editItemId">
+
+                <!-- Invoice Number + Description -->
+                <div class="sale-form-left grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                    <div>
+                        <label for="inputInvoice" class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Invoice No.</label>
+                        <input type="text" id="inputInvoice" placeholder="Auto-generated invoice number" class="w-full h-12 px-3.5 rounded-xl border border-slate-300 bg-slate-50/50 text-sm font-semibold text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-600 transition">
+                    </div>
+                    <div>
+                        <label for="inputDesc" class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Description / Ref</label>
+                        <input type="text" id="inputDesc" required placeholder="TABLE 3, ORDER #0614" oninput="this.value=this.value.toLocaleUpperCase()" class="w-full h-12 px-3.5 rounded-xl border border-slate-300 bg-slate-50/50 text-sm font-semibold text-slate-800 uppercase focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-600 transition">
+                    </div>
+                </div>
+
+                <!-- Gross Amount -->
+                <div class="sale-form-left">
+                    <label for="inputAmount" class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Total Amount (Gross)</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 pl-4 flex items-center text-slate-400 text-lg font-normal" aria-hidden="true">₱</span>
+                        <input type="text" inputmode="decimal" pattern="[0-9]+([.][0-9]{0,2})?" id="inputAmount" required placeholder="0.00" oninput="sanitizeGrossInput()" class="w-full py-3 pl-9 pr-4 text-xl font-extrabold text-slate-900 rounded-xl border border-slate-300 bg-slate-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-600 transition">
+                    </div>
+                </div>
+
+                <!-- Calculation Type Toggle Pill — DEFAULT VAT 12% active -->
+                <div class="sale-form-left">
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5">Calculation Type</label>
+                    <div class="grid grid-cols-2 gap-2 p-1 bg-slate-100 rounded-xl border border-slate-200">
+                        <button type="button" id="btnCalcSc" onclick="setCalcType('sc')" class="h-11 rounded-lg text-xs font-bold transition flex items-center justify-center space-x-1.5 text-slate-600 hover:text-slate-900">
+                            <i class="fa-solid fa-person-cane"></i>
+                            <span>SC / PWD (20%)</span>
+                        </button>
+                        <button type="button" id="btnCalcVat" onclick="setCalcType('vat')" class="h-11 rounded-lg text-xs font-bold transition flex items-center justify-center space-x-1.5 bg-white text-blue-700 shadow-sm border border-blue-200">
+                            <i class="fa-solid fa-percent"></i>
+                            <span>Regular 12% VAT</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Payment Method Selector -->
+                <div class="sale-form-left">
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5">Payment Method</label>
+                    <div class="grid grid-cols-4 gap-2 sm:gap-3">
+                        <button type="button" id="btnPayCash" onclick="setPaymentType('Cash')" class="h-11 rounded-xl border text-xs font-bold transition flex flex-col items-center justify-center border-slate-300 bg-slate-50 text-slate-700 hover:bg-slate-100">
+                            <i class="fa-solid fa-money-bill-wave text-emerald-600 mb-0.5"></i>
+                            <span>Cash</span>
+                        </button>
+                        <button type="button" id="btnPayGcash" onclick="setPaymentType('GCash')" class="h-11 rounded-xl border text-xs font-bold transition flex flex-col items-center justify-center border-slate-300 bg-slate-50 text-slate-700 hover:bg-slate-100">
+                            <i class="fa-solid fa-mobile-screen-button text-blue-600 mb-0.5"></i>
+                            <span>GCash</span>
+                        </button>
+                        <button type="button" id="btnPayCard" onclick="setPaymentType('Card')" class="h-11 rounded-xl border text-xs font-bold transition flex flex-col items-center justify-center border-slate-300 bg-slate-50 text-slate-700 hover:bg-slate-100">
+                            <i class="fa-solid fa-credit-card text-purple-600 mb-0.5"></i>
+                            <span>Card</span>
+                        </button>
+                        <button type="button" id="btnPayCredit" onclick="setPaymentType('Credit')" class="h-11 rounded-xl border text-xs font-bold transition flex flex-col items-center justify-center border-slate-300 bg-slate-50 text-slate-700 hover:bg-slate-100">
+                            <i class="fa-solid fa-clock-rotate-left text-amber-600 mb-0.5"></i>
+                            <span>Credit</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Credit Fee Config Options -->
+                <div id="creditFeeSection" class="sale-form-left p-3 bg-amber-50/70 rounded-xl border border-amber-200/80 space-y-2">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-bold text-amber-800 flex items-center gap-1">
+                            <i class="fa-solid fa-circle-percentage text-amber-600"></i> Fee / Surcharge Rate
+                        </span>
+                        <span id="creditFeeDisplayBadge" class="text-[11px] font-bold text-amber-700">3%</span>
+                    </div>
+
+                    <div class="grid grid-cols-4 gap-1.5 sm:gap-2">
+                        <button type="button" onclick="setFeeRate(0)" id="btnFee0" class="h-9 text-xs font-bold rounded-lg border border-amber-300 bg-white text-amber-800 hover:bg-amber-100 transition">Free (0%)</button>
+                        <button type="button" onclick="setFeeRate(3)" id="btnFee3" class="h-9 text-xs font-bold rounded-lg border border-amber-300 bg-white text-amber-800 hover:bg-amber-100 transition">3%</button>
+                        <button type="button" onclick="setFeeRate(5)" id="btnFee5" class="h-9 text-xs font-bold rounded-lg border border-amber-300 bg-white text-amber-800 hover:bg-amber-100 transition">5%</button>
+                        <button type="button" onclick="toggleCustomFeeInput()" id="btnFeeCustom" class="h-9 text-xs font-bold rounded-lg border border-amber-300 bg-white text-amber-800 hover:bg-amber-100 transition">Custom</button>
+                    </div>
+
+                    <!-- Custom Fee % Input -->
+                    <div id="customFeeInputWrapper" class="hidden pt-1">
+                        <div class="relative">
+                            <input type="number" step="0.1" min="0" max="100" inputmode="decimal" id="inputCustomFee" placeholder="Custom Fee %" oninput="handleCustomFeeChange()" class="w-full h-10 px-3 pr-8 text-xs font-bold rounded-lg border border-amber-300 focus:outline-none focus:ring-1 focus:ring-amber-500">
+                            <span class="absolute inset-y-0 right-0 pr-3 flex items-center text-xs font-bold text-amber-600">%</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Live Calculation Breakdown Preview -->
+                <div class="sale-form-summary bg-slate-900 text-white p-4 rounded-xl text-sm space-y-3 font-mono border border-slate-800">
+                    <div class="sale-preview-row flex justify-between items-center text-slate-200">
+                        <span class="font-semibold">Net Sales (Gross / 1.12):</span>
+                        <span id="prevNet" class="text-white"><span class="preview-currency-symbol" aria-hidden="true">₱</span>0.00</span>
+                    </div>
+                    <div id="prevScRow" class="sale-preview-row flex justify-between items-center text-amber-200 hidden">
+                        <span class="font-semibold">SC/PWD Discount (-20%):</span>
+                        <span id="prevSc" class="text-amber-100">-<span class="preview-currency-symbol" aria-hidden="true">₱</span>0.00</span>
+                    </div>
+                    <div id="prevVatRow" class="sale-preview-row flex justify-between items-center text-blue-200">
+                        <span class="font-semibold">12% VAT Amount:</span>
+                        <span id="prevVat" class="text-white"><span class="preview-currency-symbol" aria-hidden="true">₱</span>0.00</span>
+                    </div>
+                    <div id="prevFeeRow" class="sale-preview-row flex justify-between items-center text-emerald-300">
+                        <span class="font-semibold">Surcharge / Fee (<span id="prevFeeRateText">0%</span>):</span>
+                        <span id="prevFee" class="text-emerald-200">+<span class="preview-currency-symbol" aria-hidden="true">₱</span>0.00</span>
+                    </div>
+                    <div class="sale-preview-final pt-3 mt-2 border-t border-slate-700 flex justify-between items-center font-extrabold font-sans">
+                        <span class="text-slate-200 uppercase font-bold tracking-wide">Final Collectible:</span>
+                        <span id="prevFinalDue" class="text-blue-300"><span class="preview-currency-symbol" aria-hidden="true">₱</span>0.00</span>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="sale-form-actions pt-2 flex gap-2">
+                    <button type="button" onclick="closeSaleModal()" class="sale-dismiss-button flex-1 h-12 rounded-xl border border-slate-300 text-slate-600 font-bold text-sm hover:bg-slate-50 transition touch-active">
+                        Cancel
+                    </button>
+                    <button type="button" id="saleCancellationButton" onclick="cancelSaleFromEdit()" class="hidden flex-1 h-12 rounded-xl border sale-cancel-button font-bold text-sm transition touch-active">
+                        Cancel Sale
+                    </button>
+                    <button type="submit" class="flex-1 h-12 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm shadow-md shadow-blue-500/20 transition touch-active">
+                        Save Sale
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="expenseModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm opacity-0 pointer-events-none transition-opacity duration-200 flex items-end sm:items-center justify-center p-0 sm:p-4" role="dialog" aria-modal="true" aria-labelledby="expenseModalTitle">
+        <div id="expenseModalPanel" class="expense-modal-panel bg-white w-full max-w-lg rounded-t-3xl sm:rounded-2xl max-h-[90vh] shadow-2xl transform translate-y-full transition-transform duration-300 ease-out p-5 sm:p-6">
+            <div class="expense-modal-header flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
+                <div class="flex items-center gap-2">
+                    <span class="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center" aria-hidden="true">
+                        <i class="fa-solid fa-receipt"></i>
+                    </span>
+                    <div>
+                        <h2 id="expenseModalTitle" class="text-base font-extrabold text-slate-900">Add Expense</h2>
+                        <p class="text-xs text-slate-500">For the selected ledger date</p>
+                    </div>
+                </div>
+                <button type="button" onclick="closeExpenseModal()" aria-label="Close expense form" class="w-9 h-9 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center touch-active hover:bg-slate-200">
+                    <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+                </button>
+            </div>
+            <form id="expenseForm" onsubmit="handleExpenseSubmit(event)">
+                <input type="hidden" id="expenseEditId">
+                <div class="expense-form-fields space-y-4">
+                    <div>
+                        <label for="expenseDescription" class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Description</label>
+                        <input type="text" id="expenseDescription" required maxlength="160" placeholder="e.g. Monthly electricity bill" class="expense-field w-full h-12 px-3.5 rounded-xl border border-slate-300 bg-slate-50/50 text-sm font-semibold text-slate-800 transition">
+                    </div>
+                    <div>
+                        <label for="expensePayee" class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Payee / Recipient <span class="normal-case font-medium text-slate-400">(optional)</span></label>
+                        <input type="text" id="expensePayee" autocomplete="off" maxlength="160" placeholder="e.g. ABC Supplies or Maria Santos" class="expense-field w-full h-12 px-3.5 rounded-xl border border-slate-300 bg-slate-50/50 text-sm font-semibold text-slate-800 transition">
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                            <label for="expenseCategory" class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Category</label>
+                            <input type="text" id="expenseCategory" required maxlength="80" list="expenseCategoryOptions" value="Supplies" placeholder="e.g. Utilities" class="expense-field w-full h-12 px-3 rounded-xl border border-slate-300 bg-white text-sm font-semibold text-slate-800">
+                            <datalist id="expenseCategoryOptions">
+                                <option value="Supplies"></option>
+                                <option value="Inventory"></option>
+                                <option value="Utilities"></option>
+                                <option value="Rent"></option>
+                                <option value="Transportation"></option>
+                                <option value="Wages"></option>
+                                <option value="Repairs"></option>
+                                <option value="Marketing"></option>
+                                <option value="Other"></option>
+                            </datalist>
+                        </div>
+                        <div>
+                            <label for="expenseAmount" class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Amount (PHP)</label>
+                            <div class="relative">
+                                <span class="expense-amount-currency" aria-hidden="true">₱</span>
+                                <input type="number" id="expenseAmount" required min="0.01" step="0.01" inputmode="decimal" placeholder="0.00" class="expense-field w-full h-12 pr-3.5 rounded-xl border border-slate-300 bg-slate-50/50 text-sm font-bold text-slate-800">
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <label for="expensePaymentMethod" class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Payment Method</label>
+                        <select id="expensePaymentMethod" required class="expense-field w-full h-12 px-3 rounded-xl border border-slate-300 bg-white text-sm font-semibold text-slate-800">
+                            <option>Cash</option>
+                            <option>GCash</option>
+                            <option>Card</option>
+                            <option>Credit</option>
+                            <option>Other</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="expenseNotes" class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Notes <span class="normal-case font-medium text-slate-400">(optional)</span></label>
+                        <textarea id="expenseNotes" rows="3" maxlength="500" placeholder="Optional details or reference" class="expense-field w-full px-3.5 py-3 rounded-xl border border-slate-300 bg-slate-50/50 text-sm text-slate-800"></textarea>
+                    </div>
+                </div>
+                <div class="expense-form-actions flex gap-2">
+                    <button type="button" onclick="closeExpenseModal()" class="flex-1 min-h-11 rounded-xl border border-slate-300 text-slate-600 font-bold text-sm hover:bg-slate-50 transition">Cancel</button>
+                    <button type="submit" class="expense-primary-button flex-1 h-12 rounded-xl font-bold text-sm shadow-md transition">Save Expense</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MORE OPTIONS / SETTINGS MODAL (mobile only) -->
+    <div id="menuModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm opacity-0 pointer-events-none transition-opacity duration-200 flex items-end sm:items-center justify-center p-0 sm:p-4">
+        <div id="menuModalPanel" class="bg-white w-full max-w-sm rounded-t-3xl sm:rounded-2xl max-h-[80vh] overflow-y-auto no-scrollbar shadow-2xl transform translate-y-full transition-transform duration-300 ease-out p-5 space-y-3">
+            
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                <h3 class="text-base font-bold text-slate-800">Options & Actions</h3>
+                <button onclick="toggleMenuModal()" class="w-8 h-8 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center touch-active hover:bg-slate-200">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <div class="space-y-2 pt-1">
+                <div class="flex items-center justify-between gap-4 px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl">
+                    <div>
+                        <p class="text-xs font-bold text-slate-800">Dashboard 12% VAT total</p>
+                        <p class="text-[11px] text-slate-500 mt-0.5">Show or hide the daily VAT total beside Net Sales.</p>
+                    </div>
+                    <label class="inline-flex items-center gap-2 shrink-0 cursor-pointer">
+                        <input id="dashboardVatVisibility" type="checkbox" class="w-4 h-4 accent-blue-600" onchange="setDashboardVatVisibility(this.checked)">
+                        <span class="text-xs font-semibold text-slate-600">Show</span>
+                    </label>
+                </div>
+                <button onclick="exportSummaryCSV()" class="w-full h-12 px-4 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl text-slate-700 font-bold text-xs flex items-center justify-between touch-active transition">
+                    <span class="flex items-center gap-2"><i class="fa-solid fa-file-csv text-emerald-600 text-base"></i> Export Day Sales (CSV)</span>
+                    <i class="fa-solid fa-chevron-right text-slate-400 text-xs"></i>
+                </button>
+                <button onclick="openPrintReportModal()" class="w-full h-12 px-4 bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded-xl text-amber-800 font-bold text-xs flex items-center justify-between touch-active transition">
+                    <span class="flex items-center gap-2"><i class="fa-solid fa-file-invoice text-amber-600 text-base"></i> Export Printable Daily Report</span>
+                    <i class="fa-solid fa-chevron-right text-amber-400 text-xs"></i>
+                </button>
+
+                <button onclick="exportSqliteDatabase()" class="w-full h-12 px-4 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-xl text-blue-700 font-bold text-xs flex items-center justify-between touch-active transition">
+                    <span class="flex items-center gap-2"><i class="fa-solid fa-database text-blue-600 text-base"></i> Export Day SQLite Database</span>
+                    <i class="fa-solid fa-chevron-right text-blue-400 text-xs"></i>
+                </button>
+                <button onclick="document.getElementById('sqliteFileInput').click(); toggleMenuModal()" class="w-full h-12 px-4 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl text-slate-700 font-bold text-xs flex items-center justify-between touch-active transition">
+                    <span class="flex items-center gap-2"><i class="fa-solid fa-file-arrow-up text-amber-600 text-base"></i> Import Day SQLite Database</span>
+                    <i class="fa-solid fa-chevron-right text-slate-400 text-xs"></i>
+                </button>
+                <button onclick="showBackupHistory()" class="w-full h-12 px-4 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-xl text-emerald-700 font-bold text-xs flex items-center justify-between touch-active transition">
+                    <span class="flex items-center gap-2"><i class="fa-solid fa-clock-rotate-left text-emerald-600 text-base"></i> Automatic Daily Backups</span>
+                    <i class="fa-solid fa-chevron-right text-emerald-400 text-xs"></i>
+                </button>
+                <button onclick="chooseDataFolder()" class="w-full h-12 px-4 bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded-xl text-amber-700 font-bold text-xs flex items-center justify-between touch-active transition">
+                    <span class="flex items-center gap-2"><i class="fa-solid fa-folder-open text-amber-600 text-base"></i> Choose Daily Database Folder</span>
+                    <i class="fa-solid fa-chevron-right text-amber-400 text-xs"></i>
+                </button>
+                <p class="px-1 text-[11px] leading-relaxed text-slate-500">If opened directly as a file and folder access is unavailable, the browser still saves sales locally. To write files into a chosen folder, use a recent Chromium browser from localhost or HTTPS.</p>
+                <button onclick="printLedger()" class="w-full h-12 px-4 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl text-slate-700 font-bold text-xs flex items-center justify-between touch-active transition">
+                    <span class="flex items-center gap-2"><i class="fa-solid fa-print text-blue-600 text-base"></i> Print / Save PDF</span>
+                    <i class="fa-solid fa-chevron-right text-slate-400 text-xs"></i>
+                </button>
+
+                <button onclick="clearCurrentDaySales()" class="w-full h-12 px-4 bg-red-50 hover:bg-red-100 border border-red-200 rounded-xl text-red-600 font-bold text-xs flex items-center justify-between touch-active transition">
+                    <span class="flex items-center gap-2"><i class="fa-solid fa-trash-can text-red-500 text-base"></i> Clear Entire Day Ledger</span>
+                    <i class="fa-solid fa-chevron-right text-red-300 text-xs"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <input id="sqliteFileInput" type="file" accept=".sqlite,.sqlite3,.db,application/vnd.sqlite3" class="hidden" onchange="importSqliteDatabase(event)">
+
+    <div id="calendarModal" onclick="if(event.target===this)closeCalendar()" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm opacity-0 pointer-events-none transition-opacity duration-200 flex items-end sm:items-center justify-center p-0 sm:p-4" role="dialog" aria-modal="true" aria-labelledby="calendarTitle">
+        <div id="calendarPanel" class="bg-white w-full max-w-sm rounded-t-3xl sm:rounded-2xl shadow-2xl transform translate-y-full transition-transform duration-300 ease-out p-5">
+            <div class="flex items-center justify-between mb-4">
+                <button type="button" onclick="shiftCalendarMonth(-1)" aria-label="Previous month" class="w-10 h-10 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200"><i class="fa-solid fa-chevron-left"></i></button>
+                <h2 id="calendarTitle" class="text-base font-extrabold text-slate-800"></h2>
+                <button type="button" id="nextCalendarMonthButton" onclick="shiftCalendarMonth(1)" aria-label="Next month" class="w-10 h-10 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200"><i class="fa-solid fa-chevron-right"></i></button>
+            </div>
+            <div class="grid grid-cols-7 text-center text-[11px] font-bold text-slate-400 mb-2">
+                <span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span>
+            </div>
+            <div id="calendarDays" class="grid grid-cols-7 gap-1" role="grid"></div>
+            <div class="flex justify-between mt-4">
+                <button type="button" onclick="selectCalendarDate(todayDateString())" class="px-4 py-2 rounded-xl text-sm font-bold text-blue-700 bg-blue-50 hover:bg-blue-100">Today</button>
+                <button type="button" onclick="closeCalendar()" class="px-4 py-2 rounded-xl text-sm font-bold text-slate-600 bg-slate-100 hover:bg-slate-200">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="confirmModal" class="fixed inset-0 z-[60] bg-slate-900/60 backdrop-blur-sm opacity-0 pointer-events-none transition-opacity duration-200 flex items-end sm:items-center justify-center p-0 sm:p-4" role="alertdialog" aria-modal="true" aria-labelledby="confirmTitle" aria-describedby="confirmMessage">
+        <div id="confirmPanel" class="bg-white w-full max-w-sm rounded-t-3xl sm:rounded-2xl shadow-2xl transform translate-y-full transition-transform duration-300 ease-out p-6">
+            <div id="confirmIconContainer" class="w-12 h-12 rounded-2xl bg-red-50 text-red-600 flex items-center justify-center mb-4"><i id="confirmIcon" class="fa-solid fa-trash-can text-lg"></i></div>
+            <h2 id="confirmTitle" class="text-lg font-extrabold text-slate-900">Confirm deletion</h2>
+            <p id="confirmMessage" class="text-sm text-slate-500 mt-2"></p>
+            <div class="flex gap-3 mt-6">
+                <button type="button" id="confirmCancelButton" onclick="closeConfirmModal()" class="w-1/2 h-11 rounded-xl border border-slate-300 text-slate-700 font-bold text-sm">Cancel</button>
+                <button type="button" id="confirmActionButton" onclick="runConfirmAction()" class="w-1/2 h-11 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-sm">Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="noticeModal" class="fixed inset-0 z-[60] bg-slate-900/60 backdrop-blur-sm opacity-0 pointer-events-none transition-opacity duration-200 flex items-end sm:items-center justify-center p-0 sm:p-4" role="dialog" aria-modal="true" aria-labelledby="noticeTitle">
+        <div id="noticePanel" class="bg-white w-full max-w-sm rounded-t-3xl sm:rounded-2xl shadow-2xl transform translate-y-full transition-transform duration-300 ease-out p-6">
+            <div class="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mb-4"><i class="fa-solid fa-file-circle-exclamation text-lg"></i></div>
+            <h2 id="noticeTitle" class="text-lg font-extrabold text-slate-900">No sales to export!</h2>
+            <p id="noticeMessage" class="text-sm text-slate-500 mt-2">There are no sales for the selected date.</p>
+            <button type="button" onclick="closeNoticeModal()" class="w-full h-11 mt-6 rounded-xl bg-blue-600 text-white font-bold text-sm">Got it</button>
+        </div>
+    </div>
+
+    <div id="backupModal" class="fixed inset-0 z-[55] bg-slate-900/60 backdrop-blur-sm opacity-0 pointer-events-none transition-opacity duration-200 flex items-end sm:items-center justify-center p-0 sm:p-4" role="dialog" aria-modal="true" aria-labelledby="backupTitle">
+        <div id="backupPanel" class="bg-white w-full max-w-lg rounded-t-3xl sm:rounded-2xl max-h-[80vh] overflow-y-auto shadow-2xl transform translate-y-full transition-transform duration-300 ease-out p-5">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                <div>
+                    <h2 id="backupTitle" class="text-base font-extrabold text-slate-900">Automatic Daily Backups</h2>
+                    <p class="text-xs text-slate-500 mt-1">One SQLite snapshot per day in this browser, refreshed on app open or data changes. Download copies for external storage.</p>
+                </div>
+                <button type="button" onclick="closeBackupHistory()" aria-label="Close backups" class="w-9 h-9 rounded-full bg-slate-100 text-slate-500"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div id="backupList" class="space-y-2 pt-4"></div>
+            <button type="button" onclick="closeBackupHistory()" class="w-full h-11 mt-4 rounded-xl border border-slate-300 text-slate-700 font-bold text-sm">Close</button>
+        </div>
+    </div>
+
+    <div id="printReportModal" class="fixed inset-0 z-[55] bg-slate-900/60 backdrop-blur-sm opacity-0 pointer-events-none transition-opacity duration-200 flex items-end sm:items-center justify-center p-0 sm:p-4" role="dialog" aria-modal="true" aria-labelledby="printReportTitle">
+        <div id="printReportPanel" class="bg-white w-full max-w-md rounded-t-3xl sm:rounded-2xl shadow-2xl transform translate-y-full transition-transform duration-300 ease-out p-5 sm:p-6">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
+                <div>
+                    <h2 id="printReportTitle" class="text-base font-extrabold text-slate-900">Printable Daily Report</h2>
+                    <p class="text-xs text-slate-500 mt-1">Creates a separate summary CSV with payment breakdowns.</p>
+                </div>
+                <button type="button" onclick="closePrintReportModal()" aria-label="Close printable report form" class="w-9 h-9 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center touch-active hover:bg-slate-200">
+                    <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+                </button>
+            </div>
+            <form id="printReportForm" onsubmit="exportPrintableReport(event)" class="space-y-4">
+                <div>
+                    <label for="reportCompanyName" class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Company / Business Name</label>
+                    <input type="text" id="reportCompanyName" required maxlength="160" autocomplete="organization" placeholder="Enter company or business name" class="w-full h-12 px-3.5 rounded-xl border border-slate-300 bg-slate-50 text-sm font-semibold text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-600">
+                </div>
+                <div>
+                    <label for="reportDateAdded" class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Date Added to Report</label>
+                    <input type="date" id="reportDateAdded" required class="w-full h-12 px-3.5 rounded-xl border border-slate-300 bg-slate-50 text-sm font-semibold text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-600">
+                </div>
+                <p class="text-xs text-slate-500">The report includes sales totals, net sales, VAT, expenses, sales after expenses, and payment method totals for Cash, GCash, Card, Credit, and Other.</p>
+                <div class="flex gap-2 pt-1">
+                    <button type="button" onclick="closePrintReportModal()" class="flex-1 h-11 rounded-xl border border-slate-300 text-slate-600 font-bold text-sm hover:bg-slate-50">Cancel</button>
+                    <button type="submit" class="flex-1 h-11 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-sm shadow-md">Download Report CSV</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- TOAST NOTIFICATION -->
+    <div id="toast" class="fixed top-4 inset-x-0 max-w-xs mx-auto z-[60] bg-slate-900 text-white px-4 py-3 rounded-2xl shadow-xl transform -translate-y-20 opacity-0 transition-all duration-300 flex items-center space-x-2 pointer-events-none text-xs font-semibold">
+        <i class="fa-solid fa-circle-check text-green-400 text-sm" id="toastIcon"></i>
+        <span id="toastMsg">Operation successful!</span>
+    </div>
+
+    <script src="./vendor/sql-asm.js"></script>
+    <script src="./db.js"></script>
+    <script src="./app.js"></script>
+
+    <!-- ============================================================
+         EULA / TERMS & CONDITIONS LOGIC
+         ============================================================ -->
+    <script>
+    (function() {
+        "use strict";
+
+        const EULA_CONFIG = {
+            acceptedKey: "lumens_has_accepted_eula",
+            timestampKey: "eula_accepted_at",
+            versionKey: "eula_version",
+            version: "1.1.1",
+            scrollThreshold: 24
+        };
+
+        const eulaModal = document.getElementById("eula-modal");
+        const eulaScrollBox = document.getElementById("eula-scroll-box");
+        const acceptBtn = document.getElementById("accept-eula-btn");
+        const eulaStatusText = document.getElementById("eula-status-message");
+        const eulaStatusIcon = document.getElementById("eula-status-icon");
+        let reviewedTerms = false;
+        let acceptanceReadFailed = false;
+        let previousFocus = null;
+        let previousBodyOverflow = "";
+
+        if (!eulaModal || !eulaScrollBox || !acceptBtn || !eulaStatusText || !eulaStatusIcon) {
+            console.error("Terms and conditions could not be initialized because required dialog elements are missing.");
+            return;
+        }
+
+        eulaScrollBox.addEventListener("scroll", updateReviewState, { passive: true });
+        acceptBtn.addEventListener("click", acceptEula);
+        document.addEventListener("keydown", handleEulaKeydown);
+        window.addEventListener("resize", updateReviewState);
+        checkEulaAcceptance();
+
+        function setEulaStatus(message, state) {
+            const reviewed = state === "reviewed";
+            const warning = state === "warning";
+            eulaStatusText.textContent = message;
+            eulaStatusText.parentElement.className = reviewed
+                ? "text-xs font-semibold text-emerald-700 flex items-center gap-2"
+                : warning
+                    ? "text-xs font-semibold text-amber-800 flex items-center gap-2"
+                    : "text-xs font-semibold text-slate-600 flex items-center gap-2";
+            eulaStatusIcon.className = reviewed
+                ? "fa-solid fa-circle-check"
+                : warning
+                    ? "fa-solid fa-triangle-exclamation"
+                    : "fa-solid fa-circle-info";
+        }
+
+        function setAcceptEnabled(enabled) {
+            acceptBtn.disabled = !enabled;
+            acceptBtn.classList.toggle("eula-accept-enabled", enabled);
+            acceptBtn.classList.toggle("cursor-not-allowed", !enabled);
+        }
+
+        function checkEulaAcceptance() {
+            try {
+                const accepted = localStorage.getItem(EULA_CONFIG.acceptedKey) === "true";
+                const acceptedVersion = localStorage.getItem(EULA_CONFIG.versionKey);
+                if (accepted && acceptedVersion === EULA_CONFIG.version) {
+                    hideEulaModal();
+                    return;
+                }
+            } catch (error) {
+                acceptanceReadFailed = true;
+                console.error("The saved terms acceptance could not be read:", error);
+            }
+            showEulaModal();
+        }
+
+        function showEulaModal() {
+            previousFocus = document.activeElement;
+            previousBodyOverflow = document.body.style.overflow;
+            eulaModal.classList.remove("hidden");
+            document.body.style.overflow = "hidden";
+            eulaScrollBox.scrollTop = 0;
+            reviewedTerms = false;
+            setAcceptEnabled(false);
+            if (acceptBtn.querySelector("span")) acceptBtn.querySelector("span").textContent = "I Agree & Continue";
+            setEulaStatus(
+                acceptanceReadFailed
+                    ? "Saved acceptance could not be read. Review the terms; browser storage is needed to save your choice."
+                    : "Please review the complete agreement to continue.",
+                acceptanceReadFailed ? "warning" : "info"
+            );
+            requestAnimationFrame(() => {
+                eulaScrollBox.focus({ preventScroll: true });
+                updateReviewState();
+            });
+        }
+
+        function hideEulaModal() {
+            eulaModal.classList.add("hidden");
+            document.body.style.overflow = previousBodyOverflow;
+            if (previousFocus instanceof HTMLElement && !eulaModal.contains(previousFocus)) {
+                previousFocus.focus({ preventScroll: true });
+            }
+        }
+
+        function updateReviewState() {
+            if (eulaModal.classList.contains("hidden")) return;
+            const { scrollTop, scrollHeight, clientHeight } = eulaScrollBox;
+            const complete = scrollHeight <= clientHeight ||
+                scrollTop + clientHeight >= scrollHeight - EULA_CONFIG.scrollThreshold;
+            reviewedTerms = complete;
+            setAcceptEnabled(complete);
+            if (!complete) {
+                setEulaStatus(
+                    acceptanceReadFailed
+                        ? "Saved acceptance could not be read. Review the terms; browser storage is needed to save your choice."
+                        : "Scroll through the complete agreement to enable acceptance.",
+                    acceptanceReadFailed ? "warning" : "info"
+                );
+            } else {
+                setEulaStatus(
+                    acceptanceReadFailed
+                        ? "Terms reviewed. Browser storage must be available to save your acceptance."
+                        : "Terms reviewed. You can continue when ready.",
+                    acceptanceReadFailed ? "warning" : "reviewed"
+                );
+            }
+        }
+
+        function handleEulaKeydown(event) {
+            if (eulaModal.classList.contains("hidden")) return;
+            if (event.key === "Escape") {
+                event.preventDefault();
+                return;
+            }
+            if (event.key !== "Tab") return;
+
+            const focusable = [...eulaModal.querySelectorAll(
+                'a[href], button:not(:disabled), [tabindex="0"]'
+            )];
+            if (focusable.length === 0) {
+                event.preventDefault();
+                eulaScrollBox.focus();
+                return;
+            }
+            const first = focusable[0];
+            const last = focusable[focusable.length - 1];
+            if (event.shiftKey && (document.activeElement === first || !eulaModal.contains(document.activeElement))) {
+                event.preventDefault();
+                last.focus();
+            } else if (!event.shiftKey && (document.activeElement === last || !eulaModal.contains(document.activeElement))) {
+                event.preventDefault();
+                first.focus();
+            }
+        }
+
+        function acceptEula() {
+            if (!reviewedTerms || acceptBtn.disabled) return;
+
+            const acceptedAt = new Date().toISOString();
+            const acceptedLabel = acceptBtn.querySelector("span");
+            setAcceptEnabled(false);
+            if (acceptedLabel) acceptedLabel.textContent = "Saving…";
+
+            try {
+                localStorage.setItem(EULA_CONFIG.versionKey, EULA_CONFIG.version);
+                localStorage.setItem(EULA_CONFIG.timestampKey, acceptedAt);
+                localStorage.setItem(EULA_CONFIG.acceptedKey, "true");
+            } catch (error) {
+                console.error("Terms acceptance could not be saved:", error);
+                if (acceptedLabel) acceptedLabel.textContent = "I Agree & Continue";
+                setAcceptEnabled(true);
+                setEulaStatus("Your acceptance could not be saved. Check this browser's storage settings and try again.", "warning");
+                return;
+            }
+
+            hideEulaModal();
+            window.dispatchEvent(new CustomEvent("eulaAccepted", {
+                detail: { acceptedAt, version: EULA_CONFIG.version }
+            }));
+        }
+    })();
+    </script>
+</body>
+</html>

@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="Lumens Ledger logo">
+  <defs>
+    <linearGradient id="ledgerBg" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0%" stop-color="#1d4ed8"/>
+      <stop offset="100%" stop-color="#0f172a"/>
+    </linearGradient>
+    <linearGradient id="panelGlow" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0%" stop-color="#f8fbff"/>
+      <stop offset="100%" stop-color="#dfeafc"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="128" height="128" rx="30" fill="url(#ledgerBg)"/>
+
+  <path d="M38 24c3-7 9-12 16-12h20c7 0 13 5 16 12l4 9H34l4-9Z" fill="#f8fafc"/>
+  <path d="M44 33h40v9H44z" fill="#bfdbfe" opacity="0.9"/>
+
+  <rect x="22" y="32" width="84" height="68" rx="16" fill="url(#panelGlow)"/>
+  <rect x="32" y="41" width="64" height="22" rx="10" fill="#dbeafe"/>
+  <path d="M47 45.5h11.5v6.5H47zm21 0h11.5v6.5H68z" fill="#1e3a8a" opacity="0.85"/>
+  <path d="M55 57.5h18l-9 8.5-9-8.5Z" fill="#f97316"/>
+
+  <g fill="#f8fafc">
+    <path d="M34 74h8v8h-8zm16 0h8v8h-8zm16 0h8v8h-8zm16 0h8v8h-8zm-16 14h8v8h-8zm16 0h8v8h-8z"/>
+  </g>
+  <g fill="#93c5fd">
+    <rect x="34" y="74" width="8" height="8" rx="2"/>
+    <rect x="50" y="74" width="8" height="8" rx="2"/>
+    <rect x="66" y="74" width="8" height="8" rx="2"/>
+    <rect x="82" y="74" width="8" height="8" rx="2"/>
+    <rect x="50" y="88" width="8" height="8" rx="2"/>
+    <rect x="66" y="88" width="8" height="8" rx="2"/>
+  </g>
+  <g fill="#f97316">
+    <rect x="82" y="88" width="8" height="8" rx="2"/>
+  </g>
+
+  <path d="M47 31 52 20h7l5 11h-12Z" fill="#f97316"/>
+  <path d="M81 31 86 20h7l5 11H81Z" fill="#f97316"/>
+  <circle cx="53" cy="54" r="3" fill="#1e3a8a"/>
+  <circle cx="74" cy="54" r="3" fill="#1e3a8a"/>
+  <path d="M61 60c1.5 2 5.5 2 7 0" fill="none" stroke="#1e3a8a" stroke-linecap="round" stroke-width="2.5"/>
+</svg>
